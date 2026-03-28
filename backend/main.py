@@ -116,9 +116,10 @@ def draw_plant_cards(surface, game_state, fonts):
         x = 140 + i * 100
         y = CARD_AREA_Y + 10
         dim = game_state.sun_count < card["cost"]
+        on_cooldown = game_state.plant_cooldowns[i] > 0
         
         # 卡片背景
-        bg_color = get_color("dark_card") if not dim else (30, 30, 40)
+        bg_color = get_color("dark_card") if not dim and not on_cooldown else (30, 30, 40)
         pygame.draw.rect(surface, bg_color, (x, y, 90, 100), border_radius=8)
         
         # 选中边框
@@ -128,16 +129,47 @@ def draw_plant_cards(surface, game_state, fonts):
             pygame.draw.rect(surface, (60, 60, 80), (x, y, 90, 100), 1, border_radius=8)
         
         # 植物图标
-        draw_card_icon(surface, x, y, i, dim)
+        draw_card_icon(surface, x, y, i, dim or on_cooldown)
         
         # 费用
         pygame.draw.rect(surface, (25, 25, 35), (x + 5, y + 78, 80, 18), border_radius=4)
-        sun_color = get_color("accent_yellow") if not dim else (80, 65, 25)
+        sun_color = get_color("accent_yellow") if not dim and not on_cooldown else (80, 65, 25)
         pygame.draw.circle(surface, sun_color, (x + 18, y + 87), 6)
         if font_small:
             cost_text = font_small.render(str(card["cost"]), True, 
-                                         get_color("white") if not dim else get_color("gray"))
+                                         get_color("white") if not dim and not on_cooldown else get_color("gray"))
             surface.blit(cost_text, (x + 28, y + 80))
+        
+        # 冷却遮罩和倒计时
+        if on_cooldown:
+            # 半透明遮罩
+            overlay = pygame.Surface((90, 100), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 150))
+            surface.blit(overlay, (x, y))
+            
+            # 计算冷却进度
+            cooldown_total = card["cooldown"]
+            cooldown_remaining = game_state.plant_cooldowns[i]
+            cooldown_progress = 1 - (cooldown_remaining / cooldown_total)
+            
+            # 绘制进度条背景
+            bar_width = 70
+            bar_height = 8
+            bar_x = x + 10
+            bar_y = y + 40
+            pygame.draw.rect(surface, (50, 50, 70), (bar_x, bar_y, bar_width, bar_height), border_radius=4)
+            
+            # 绘制进度条
+            progress_width = int(bar_width * cooldown_progress)
+            if progress_width > 0:
+                pygame.draw.rect(surface, (80, 150, 255), (bar_x, bar_y, progress_width, bar_height), border_radius=4)
+            
+            # 显示倒计时秒数
+            cooldown_seconds = (cooldown_remaining + 59) // 60  # 向上取整
+            if font_small:
+                cooldown_text = font_small.render(f"{cooldown_seconds}s", True, get_color("white"))
+                text_rect = cooldown_text.get_rect(center=(x + 45, y + 65))
+                surface.blit(cooldown_text, text_rect)
 
 
 def draw_game(surface, game_state, feedback, fonts, restart_btn, menu_btn, menu_buttons):

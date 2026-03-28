@@ -47,6 +47,7 @@ PLANT_CONFIG = {
         "health": 100,
         "sun_interval": 600,  # 产生阳光间隔(帧)
         "color": "accent_yellow",
+        "cooldown": 300,  # 冷却时间(帧)
     },
     "peashooter": {
         "name": "豌豆射手",
@@ -55,6 +56,7 @@ PLANT_CONFIG = {
         "shoot_interval": 90,
         "damage": 20,
         "color": "accent_green",
+        "cooldown": 300,  # 冷却时间(帧)
     },
     "snowpea": {
         "name": "寒冰射手",
@@ -64,12 +66,14 @@ PLANT_CONFIG = {
         "damage": 20,
         "slow_duration": 180,
         "color": "accent_blue",
+        "cooldown": 300,  # 冷却时间(帧)
     },
     "wallnut": {
         "name": "坚果墙",
         "cost": 50,
         "health": 400,
         "color": (180, 150, 120),
+        "cooldown": 600,  # 冷却时间(帧)
     },
     "cherrybomb": {
         "name": "樱桃炸弹",
@@ -79,6 +83,7 @@ PLANT_CONFIG = {
         "explosion_damage": 1800,
         "explosion_range": 1.5,  # 格子数
         "color": "accent_red",
+        "cooldown": 900,  # 冷却时间(帧)
     },
 }
 

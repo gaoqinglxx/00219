@@ -64,13 +64,16 @@ class GameState:
         
         # 植物卡片配置
         self.plant_cards = []
+        self.plant_cooldowns = []
         for key, config in PLANT_CONFIG.items():
             self.plant_cards.append({
                 "key": key,
                 "name": config["name"],
                 "cost": config["cost"],
                 "color": config["color"],
+                "cooldown": config.get("cooldown", 300),
             })
+            self.plant_cooldowns.append(0)
         
         logger.log_game_reset()
     
@@ -130,6 +133,9 @@ class GameState:
             logger.log_plant_placed(plant.name, grid_y, grid_x, cost, self.sun_count)
             feedback.add(f"放置{plant.name}!", "accent_green")
             
+            # 启动冷却时间
+            self.plant_cooldowns[self.selected_index] = card["cooldown"]
+            
             self.selected_plant_key = None
             self.selected_index = -1
             return True
@@ -139,6 +145,12 @@ class GameState:
     def try_select_plant(self, index, feedback):
         """尝试选择植物卡片"""
         if 0 <= index < len(self.plant_cards):
+            # 检查冷却状态
+            if self.plant_cooldowns[index] > 0:
+                cooldown_seconds = self.plant_cooldowns[index] // 60
+                feedback.add(f"{self.plant_cards[index]['name']} 冷却中! 还剩 {cooldown_seconds} 秒", "accent_red")
+                return False
+            
             card = self.plant_cards[index]
             if self.sun_count >= card["cost"]:
                 self.selected_plant_key = card["key"]
@@ -211,6 +223,11 @@ class GameState:
             elif zombie.x < GRID_OFFSET_X - 40:
                 self.game_over = True
                 logger.log_game_over()
+        
+        # 更新植物卡片冷却
+        for i in range(len(self.plant_cooldowns)):
+            if self.plant_cooldowns[i] > 0:
+                self.plant_cooldowns[i] -= 1
         
         # 检查波次完成
         total_this_wave = self.zombies_per_wave * self.wave
