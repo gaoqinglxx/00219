@@ -175,3 +175,12 @@ PROJECTILE_CONFIG = {
         "slow_duration": 180,
     },
 }
+
+# 冷却时间配置(帧)
+COOLDOWN_CONFIG = {
+    "sunflower": 300,    # 5秒
+    "peashooter": 420,   # 7秒
+    "snowpea": 480,      # 8秒
+    "wallnut": 600,      # 10秒
+    "cherrybomb": 900,   # 15秒
+}

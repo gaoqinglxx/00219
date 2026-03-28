@@ -45,6 +45,9 @@ class GameState:
         self.selected_plant_key = None
         self.selected_index = -1
         
+        # 冷却时间相关
+        self.cooldowns = {key: 0 for key in PLANT_CONFIG.keys()}
+        
         self.wave = 1
         self.zombie_spawn_timer = 0
         self.zombie_spawn_interval = WAVE_CONFIG["initial_spawn_interval"]
@@ -127,6 +130,10 @@ class GameState:
             self.grid[grid_y][grid_x] = plant
             self.sun_count -= cost
             
+            # 设置冷却时间
+            from config import COOLDOWN_CONFIG
+            self.cooldowns[self.selected_plant_key] = COOLDOWN_CONFIG.get(self.selected_plant_key, 300)
+            
             logger.log_plant_placed(plant.name, grid_y, grid_x, cost, self.sun_count)
             feedback.add(f"放置{plant.name}!", "accent_green")
             
@@ -140,6 +147,13 @@ class GameState:
         """尝试选择植物卡片"""
         if 0 <= index < len(self.plant_cards):
             card = self.plant_cards[index]
+            
+            # 检查冷却时间
+            if self.cooldowns.get(card["key"], 0) > 0:
+                cooldown_seconds = self.cooldowns[card["key"]] // 60
+                feedback.add(f"{card['name']}冷却中... 剩余{cooldown_seconds}秒", "accent_red")
+                return False
+            
             if self.sun_count >= card["cost"]:
                 self.selected_plant_key = card["key"]
                 self.selected_index = index
@@ -162,6 +176,11 @@ class GameState:
         """更新游戏状态"""
         if self.game_over or self.victory or self.paused:
             return
+        
+        # 更新冷却时间
+        for key in self.cooldowns:
+            if self.cooldowns[key] > 0:
+                self.cooldowns[key] -= 1
         
         # 天空阳光
         self.sky_sun_timer += 1

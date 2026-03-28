@@ -111,11 +111,13 @@ def draw_card_icon(surface, x, y, idx, dim=False):
 def draw_plant_cards(surface, game_state, fonts):
     """绘制植物卡片"""
     font_small = fonts[1]
+    from config import COOLDOWN_CONFIG
     
     for i, card in enumerate(game_state.plant_cards):
         x = 140 + i * 100
         y = CARD_AREA_Y + 10
-        dim = game_state.sun_count < card["cost"]
+        cooldown = game_state.cooldowns.get(card["key"], 0)
+        dim = game_state.sun_count < card["cost"] or cooldown > 0
         
         # 卡片背景
         bg_color = get_color("dark_card") if not dim else (30, 30, 40)
@@ -130,11 +132,33 @@ def draw_plant_cards(surface, game_state, fonts):
         # 植物图标
         draw_card_icon(surface, x, y, i, dim)
         
+        # 冷却时间覆盖层
+        if cooldown > 0:
+            # 计算冷却进度
+            max_cooldown = COOLDOWN_CONFIG.get(card["key"], 300)
+            cooldown_ratio = cooldown / max_cooldown
+            
+            # 绘制半透明覆盖层
+            overlay = pygame.Surface((90, 100), pygame.SRCALPHA)
+            overlay.fill((50, 50, 50, 180))
+            surface.blit(overlay, (x, y))
+            
+            # 绘制冷却进度条
+            progress_height = int(100 * cooldown_ratio)
+            pygame.draw.rect(surface, (80, 150, 200, 200), (x, y, 90, progress_height))
+            
+            # 显示剩余时间
+            if font_small:
+                remaining_seconds = (cooldown + 59) // 60  # 向上取整
+                time_text = font_small.render(f"{remaining_seconds}s", True, get_color("white"))
+                text_rect = time_text.get_rect(center=(x + 45, y + 50))
+                surface.blit(time_text, text_rect)
+        
         # 费用
         pygame.draw.rect(surface, (25, 25, 35), (x + 5, y + 78, 80, 18), border_radius=4)
         sun_color = get_color("accent_yellow") if not dim else (80, 65, 25)
         pygame.draw.circle(surface, sun_color, (x + 18, y + 87), 6)
-        if font_small:
+        if font_small and cooldown == 0:
             cost_text = font_small.render(str(card["cost"]), True, 
                                          get_color("white") if not dim else get_color("gray"))
             surface.blit(cost_text, (x + 28, y + 80))
